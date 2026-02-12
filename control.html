@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>3PT Control</title>
+<style>
+body{margin:0;background:#111;color:white;font-family:Arial;padding:20px;}
+button{padding:14px;margin:5px;font-size:16px;border:none;border-radius:8px;cursor:pointer;}
+.make{background:#22c55e;}
+.miss{background:#ef4444;}
+.gold{background:gold;color:black;}
+.blue{background:#3b82f6;}
+</style>
+</head>
+<body>
+
+<h2>3PT Control Panel</h2>
+
+<input id="player" placeholder="Player Name"/>
+<select id="moneyRack">
+<option value="0">Rack 1</option>
+<option value="1">Rack 2</option>
+<option value="2" selected>Rack 3</option>
+<option value="3">Rack 4</option>
+<option value="4">Rack 5</option>
+</select>
+
+<br><br>
+
+<button class="blue" onclick="start()">Start</button>
+<button onclick="pause()">Pause</button>
+<button onclick="reset()">Reset</button>
+
+<br><br>
+
+<button class="make" onclick="shot('made')">MAKE</button>
+<button class="gold" onclick="shot('made',2)">MAKE +2</button>
+<button class="miss" onclick="shot('miss')">MISS</button>
+
+<script>
+const BLOB_URL="https://jsonblob.com/api/jsonBlob/019c53e7-22e4-7a96-8a6e-7e8ed0d3e4a0";
+
+async function getState(){
+const r=await fetch(BLOB_URL,{cache:"no-store"});
+return await r.json();
+}
+async function putState(s){
+await fetch(BLOB_URL,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(s)
+});
+}
+
+async function start(){let s=await getState();s.running=true;await putState(s);}
+async function pause(){let s=await getState();s.running=false;await putState(s);}
+async function reset(){
+let s=await getState();
+s.score=0;
+s.timeLeftMs=60000;
+s.running=false;
+s.rackIndex=0;
+s.ballIndex=0;
+s.balls=Array.from({length:5},()=>Array.from({length:5},()=>null));
+await putState(s);
+}
+
+async function shot(type,force=null){
+let s=await getState();
+let r=s.rackIndex,b=s.ballIndex;
+if(s.balls[r][b]!==null)return;
+
+s.balls[r][b]=type;
+
+if(type==="made"){
+let pts=force!==null?force:(r===s.moneyRackIndex||b===4?2:1);
+s.score+=pts;
+}
+
+b++;
+if(b>=5){b=0;r++;}
+s.rackIndex=Math.min(4,r);
+s.ballIndex=Math.min(4,b);
+
+await putState(s);
+}
+</script>
+</body>
+</html>

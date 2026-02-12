@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>3PT Contest Overlay</title>
+<style>
+body{margin:0;background:transparent;font-family:Arial,Helvetica,sans-serif;}
+.wrap{
+position:absolute;left:40px;bottom:40px;width:1200px;
+padding:16px;background:#111;border-radius:10px;
+color:white;box-shadow:0 10px 40px rgba(0,0,0,.6);
+}
+.top{display:flex;gap:20px;align-items:center;margin-bottom:14px;}
+.box{background:#1a1a1a;padding:12px 18px;border-radius:8px;}
+.label{font-size:12px;opacity:.6;text-transform:uppercase;}
+.big{font-size:28px;font-weight:800;}
+.racks{display:flex;gap:12px;}
+.rack{flex:1;background:#151515;padding:10px;border-radius:8px;}
+.rack.active{outline:3px solid #3b82f6;}
+.rack.money{outline:3px solid gold;}
+.title{font-size:12px;margin-bottom:8px;text-transform:uppercase;opacity:.6;}
+.dots{display:flex;gap:6px;}
+.dot{
+width:18px;height:18px;border-radius:50%;
+background:#333;
+display:flex;align-items:center;justify-content:center;
+font-size:12px;font-weight:bold;
+}
+.dot.made{background:#22c55e;}
+.dot.miss{background:#ef4444;}
+.dot.money{border:2px solid gold;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">
+<div class="box">
+<div class="label">Shooter</div>
+<div class="big" id="player">MAGIC</div>
+</div>
+<div class="box">
+<div class="label">Score</div>
+<div class="big" id="score">0</div>
+</div>
+<div class="box">
+<div class="label">Time</div>
+<div class="big" id="time">60.0</div>
+</div>
+</div>
+<div class="racks" id="racks"></div>
+</div>
+
+<script>
+const BLOB_URL = "https://jsonblob.com/api/jsonBlob/019c53e7-22e4-7a96-8a6e-7e8ed0d3e4a0";
+const rackNames = ["CORNER","WING","TOP KEY","WING","CORNER"];
+
+async function getState(){
+const r=await fetch(BLOB_URL,{cache:"no-store"});
+return await r.json();
+}
+
+function isMoneyBall(state,r,b){
+return r===state.moneyRackIndex || b===4;
+}
+
+function build(state){
+document.getElementById("player").textContent=state.player;
+document.getElementById("score").textContent=state.score;
+document.getElementById("time").textContent=(state.timeLeftMs/1000).toFixed(1);
+
+const racks=document.getElementById("racks");
+racks.innerHTML="";
+for(let r=0;r<5;r++){
+let div=document.createElement("div");
+div.className="rack";
+if(r===state.rackIndex)div.classList.add("active");
+if(r===state.moneyRackIndex)div.classList.add("money");
+
+let title=document.createElement("div");
+title.className="title";
+title.textContent=rackNames[r];
+div.appendChild(title);
+
+let dots=document.createElement("div");
+dots.className="dots";
+
+for(let b=0;b<5;b++){
+let d=document.createElement("div");
+d.className="dot";
+if(isMoneyBall(state,r,b))d.classList.add("money");
+
+if(state.balls[r][b]==="made")d.classList.add("made");
+if(state.balls[r][b]==="miss")d.classList.add("miss");
+
+dots.appendChild(d);
+}
+div.appendChild(dots);
+racks.appendChild(div);
+}
+}
+
+async function loop(){
+try{
+let s=await getState();
+if(s.running){
+s.timeLeftMs=Math.max(0,s.timeLeftMs-250);
+await fetch(BLOB_URL,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(s)
+});
+}
+build(s);
+}catch(e){}
+setTimeout(loop,250);
+}
+loop();
+</script>
+</body>
+</html>
