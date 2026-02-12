@@ -5,7 +5,6 @@
 <title>3PT Overlay</title>
 <style>
 body{margin:0;background:transparent;font-family:Arial;color:white;}
-
 .wrap{
 position:absolute;
 left:40px;
@@ -23,10 +22,7 @@ overflow:hidden;
 .label{font-size:12px;opacity:.6;text-transform:uppercase;}
 .big{font-size:30px;font-weight:800;}
 
-.racks{
-display:flex;
-gap:16px;
-}
+.racks{display:flex;gap:16px;}
 
 .rack{
 width:220px;
@@ -38,27 +34,11 @@ transform:translateY(10px);
 transition:all .4s ease;
 }
 
-.rack.visible{
-opacity:1;
-transform:translateY(0);
-}
+.rack.visible{opacity:1;transform:translateY(0);}
+.rack.active{outline:3px solid #3b82f6;transform:scale(1.05);}
+.rack.money{outline:3px solid gold;}
 
-.rack.active{
-outline:3px solid #3b82f6;
-transform:scale(1.05);
-}
-
-.rack.money{
-outline:3px solid gold;
-}
-
-.title{
-font-size:13px;
-margin-bottom:8px;
-text-transform:uppercase;
-opacity:.7;
-}
-
+.title{font-size:13px;margin-bottom:8px;text-transform:uppercase;opacity:.7;}
 .dots{display:flex;gap:8px;}
 
 .dot{
@@ -76,54 +56,39 @@ background:#333;
 <body>
 
 <div class="wrap" id="wrap">
-
 <div class="top">
 <div class="box">
 <div class="label">Shooter</div>
 <div class="big" id="player">PLAYER</div>
 </div>
-
 <div class="box">
 <div class="label">Score</div>
 <div class="big" id="score">0</div>
 </div>
-
 <div class="box">
 <div class="label">Time</div>
-<div class="big" id="time">60.0</div>
+<div class="big" id="time">70.0</div>
 </div>
 </div>
 
 <div class="racks" id="rackContainer"></div>
-
 </div>
 
 <script>
+const API="https://jsonblob.com/api/jsonBlob/019c542f-f9ad-731c-addd-a35c2ca9abd9";
 const rackNames=["CORNER","WING","TOP KEY","WING","CORNER"];
 
-function getState(){
-return JSON.parse(localStorage.getItem("threePTState")) || {
-player:"PLAYER",
-score:0,
-timeLeft:60000,
-running:false,
-rackIndex:0,
-ballIndex:0,
-moneyRack:2,
-balls:Array.from({length:5},()=>Array.from({length:5},()=>null))
-};
-}
-
-function save(s){
-localStorage.setItem("threePTState",JSON.stringify(s));
+async function getState(){
+let r=await fetch(API);
+return await r.json();
 }
 
 function isMoney(s,r,b){
 return r===s.moneyRack || b===4;
 }
 
-function render(){
-let s=getState();
+async function render(){
+let s=await getState();
 
 document.getElementById("player").textContent=s.player;
 document.getElementById("score").textContent=s.score;
@@ -133,13 +98,11 @@ let container=document.getElementById("rackContainer");
 container.innerHTML="";
 
 for(let r=0;r<5;r++){
-
 let div=document.createElement("div");
 div.className="rack";
-
-if(r <= s.rackIndex) div.classList.add("visible");
-if(r === s.rackIndex) div.classList.add("active");
-if(r === s.moneyRack) div.classList.add("money");
+if(r<=s.rackIndex) div.classList.add("visible");
+if(r===s.rackIndex) div.classList.add("active");
+if(r===s.moneyRack) div.classList.add("money");
 
 let title=document.createElement("div");
 title.className="title";
@@ -162,22 +125,13 @@ div.appendChild(dots);
 container.appendChild(div);
 }
 
-// 🔥 EXPANDING WIDTH LOGIC
 let wrap=document.getElementById("wrap");
-let baseWidth=350; // scoreboard width
-let rackWidth=240; // each rack
-wrap.style.width = baseWidth + ((s.rackIndex+1) * rackWidth) + "px";
+let baseWidth=350;
+let rackWidth=240;
+wrap.style.width=baseWidth+((s.rackIndex+1)*rackWidth)+"px";
 }
 
-setInterval(()=>{
-let s=getState();
-if(s.running && s.timeLeft>0){
-s.timeLeft-=250;
-save(s);
-}
-render();
-},250);
-
+setInterval(render,500);
 render();
 </script>
 </body>
