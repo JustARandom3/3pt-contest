@@ -9,7 +9,8 @@ body{margin:0;background:transparent;font-family:Arial;color:white;}
 position:absolute;
 left:40px;
 bottom:40px;
-width:1200px;
+width:1000px;
+overflow:hidden;
 background:#111;
 padding:20px;
 border-radius:14px;
@@ -21,30 +22,25 @@ box-shadow:0 10px 40px rgba(0,0,0,.6);
 .label{font-size:12px;opacity:.6;text-transform:uppercase;}
 .big{font-size:30px;font-weight:800;}
 
-.racks{display:flex;gap:16px;}
+.slider{
+display:flex;
+gap:16px;
+transition:transform .4s ease;
+}
 
 .rack{
-flex:1;
+min-width:280px;
 padding:14px;
 border-radius:12px;
 background:#1a1a1a;
-transition:all .3s ease;
 opacity:.4;
-}
-
-.rack.past{
-opacity:1;
-background:#141414;
+transition:.3s;
 }
 
 .rack.active{
 opacity:1;
+transform:scale(1.08);
 outline:3px solid #3b82f6;
-transform:scale(1.05);
-}
-
-.rack.future{
-opacity:.3;
 }
 
 .rack.money{
@@ -65,7 +61,6 @@ width:22px;
 height:22px;
 border-radius:50%;
 background:#333;
-transition:.2s;
 }
 
 .dot.made{background:#22c55e;}
@@ -76,6 +71,7 @@ transition:.2s;
 <body>
 
 <div class="wrap">
+
 <div class="top">
 <div class="box">
 <div class="label">Shooter</div>
@@ -93,7 +89,8 @@ transition:.2s;
 </div>
 </div>
 
-<div class="racks" id="rackContainer"></div>
+<div class="slider" id="slider"></div>
+
 </div>
 
 <script>
@@ -127,18 +124,14 @@ document.getElementById("player").textContent=s.player;
 document.getElementById("score").textContent=s.score;
 document.getElementById("time").textContent=(s.timeLeft/1000).toFixed(1);
 
-let container=document.getElementById("rackContainer");
-container.innerHTML="";
+let slider=document.getElementById("slider");
+slider.innerHTML="";
 
 for(let r=0;r<5;r++){
 
 let div=document.createElement("div");
 div.className="rack";
-
-if(r < s.rackIndex) div.classList.add("past");
-else if(r === s.rackIndex) div.classList.add("active");
-else div.classList.add("future");
-
+if(r===s.rackIndex) div.classList.add("active");
 if(r===s.moneyRack) div.classList.add("money");
 
 let title=document.createElement("div");
@@ -152,17 +145,17 @@ dots.className="dots";
 for(let b=0;b<5;b++){
 let d=document.createElement("div");
 d.className="dot";
-
 if(isMoney(s,r,b)) d.classList.add("money");
 if(s.balls[r][b]==="made") d.classList.add("made");
 if(s.balls[r][b]==="miss") d.classList.add("miss");
-
 dots.appendChild(d);
 }
 
 div.appendChild(dots);
-container.appendChild(div);
+slider.appendChild(div);
 }
+
+slider.style.transform = `translateX(${-s.rackIndex * 296}px)`;
 }
 
 setInterval(()=>{
