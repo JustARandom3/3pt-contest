@@ -4,22 +4,41 @@
 <meta charset="utf-8">
 <title>3PT Control</title>
 <style>
-body{background:#111;color:white;font-family:Arial;padding:20px;}
-button{padding:12px;margin:5px;font-size:16px;border:none;border-radius:8px;cursor:pointer;}
-.make{background:#22c55e;}
-.miss{background:#ef4444;}
-.gold{background:gold;color:black;}
-.blue{background:#3b82f6;}
-input,select{padding:8px;margin:5px;font-size:16px;}
-.timer{font-size:24px;margin:15px 0;}
+body{background:#0b0b0b;color:white;font-family:Arial;padding:30px;}
+input,select{padding:6px;margin:6px 0;}
+button{
+padding:10px 18px;
+margin:6px 6px 6px 0;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+.start{background:#2563eb;color:white;}
+.pause{background:#aaa;}
+.reset{background:#ddd;}
+.make{background:#22c55e;color:black;}
+.make2{background:gold;color:black;}
+.miss{background:#ef4444;color:white;}
+.timerBox{
+margin-top:20px;
+font-size:28px;
+font-weight:bold;
+}
 </style>
 </head>
 <body>
 
 <h2>3PT Control</h2>
 
-<input id="playerInput" placeholder="Player Name">
-<select id="moneyRackSelect">
+<label>Player</label><br>
+<input id="player" placeholder="Name"><br>
+
+<label>Round Time (seconds)</label><br>
+<input type="number" id="roundTime" value="70"><br>
+
+<label>Money Rack</label><br>
+<select id="moneyRack">
 <option value="0">Rack 1</option>
 <option value="1">Rack 2</option>
 <option value="2" selected>Rack 3</option>
@@ -27,24 +46,28 @@ input,select{padding:8px;margin:5px;font-size:16px;}
 <option value="4">Rack 5</option>
 </select>
 
-<div class="timer" id="timerDisplay">60.0</div>
+<br><br>
 
-<button class="blue" onclick="start()">Start</button>
-<button onclick="pause()">Pause</button>
-<button onclick="resetRound()">Reset</button>
+<button class="start" onclick="start()">Start</button>
+<button class="pause" onclick="pause()">Pause</button>
+<button class="reset" onclick="reset()">Reset</button>
 
 <br><br>
 
 <button class="make" onclick="shot('made')">MAKE</button>
-<button class="gold" onclick="shot('made',2)">MAKE +2</button>
+<button class="make2" onclick="shot('made',2)">MAKE +2</button>
 <button class="miss" onclick="shot('miss')">MISS</button>
 
+<div class="timerBox" id="timerDisplay">70.0</div>
+
 <script>
+
 function getState(){
 return JSON.parse(localStorage.getItem("threePTState")) || {
 player:"PLAYER",
 score:0,
-timeLeft:60000,
+timeLeft:70000,
+roundTime:70000,
 running:false,
 rackIndex:0,
 ballIndex:0,
@@ -57,25 +80,41 @@ function save(s){
 localStorage.setItem("threePTState",JSON.stringify(s));
 }
 
-document.getElementById("playerInput").addEventListener("input",function(){
+document.getElementById("player").addEventListener("input",function(){
 let s=getState();
-s.player=this.value || "PLAYER";
+s.player=this.value;
 save(s);
 });
 
-document.getElementById("moneyRackSelect").addEventListener("change",function(){
+document.getElementById("roundTime").addEventListener("change",function(){
+let s=getState();
+s.roundTime=parseInt(this.value)*1000;
+s.timeLeft=s.roundTime;
+save(s);
+});
+
+document.getElementById("moneyRack").addEventListener("change",function(){
 let s=getState();
 s.moneyRack=parseInt(this.value);
 save(s);
 });
 
-function start(){let s=getState();s.running=true;save(s);}
-function pause(){let s=getState();s.running=false;save(s);}
+function start(){
+let s=getState();
+s.running=true;
+save(s);
+}
 
-function resetRound(){
+function pause(){
+let s=getState();
+s.running=false;
+save(s);
+}
+
+function reset(){
 let s=getState();
 s.score=0;
-s.timeLeft=60000;
+s.timeLeft=s.roundTime;
 s.running=false;
 s.rackIndex=0;
 s.ballIndex=0;
@@ -85,10 +124,10 @@ save(s);
 
 function shot(type,force=null){
 let s=getState();
-if(s.timeLeft<=0) return;
-
 let r=s.rackIndex,b=s.ballIndex;
-if(s.balls[r][b]!=null) return;
+
+if(r>4)return;
+if(s.balls[r][b]!=null)return;
 
 s.balls[r][b]=type;
 
@@ -97,18 +136,25 @@ let pts=force!=null?force:(r===s.moneyRack||b===4?2:1);
 s.score+=pts;
 }
 
-b++;
-if(b>=5){b=0;r++;}
-s.rackIndex=Math.min(4,r);
-s.ballIndex=Math.min(4,b);
+s.ballIndex++;
+if(s.ballIndex>4){
+s.ballIndex=0;
+s.rackIndex++;
+}
 
 save(s);
 }
 
 setInterval(()=>{
 let s=getState();
+if(s.running && s.timeLeft>0){
+s.timeLeft-=100;
+if(s.timeLeft<0)s.timeLeft=0;
+save(s);
+}
 document.getElementById("timerDisplay").textContent=(s.timeLeft/1000).toFixed(1);
-},250);
+},100);
+
 </script>
 </body>
 </html>
