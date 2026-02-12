@@ -9,8 +9,7 @@ body{margin:0;background:transparent;font-family:Arial;color:white;}
 position:absolute;
 left:40px;
 bottom:40px;
-width:1000px;
-overflow:hidden;
+width:1100px;
 background:#111;
 padding:20px;
 border-radius:14px;
@@ -22,25 +21,29 @@ box-shadow:0 10px 40px rgba(0,0,0,.6);
 .label{font-size:12px;opacity:.6;text-transform:uppercase;}
 .big{font-size:30px;font-weight:800;}
 
-.slider{
+.racks{
 display:flex;
 gap:16px;
-transition:transform .4s ease;
 }
 
 .rack{
-min-width:280px;
+flex:1;
 padding:14px;
 border-radius:12px;
 background:#1a1a1a;
-opacity:.4;
-transition:.3s;
+opacity:0;
+transform:translateY(10px);
+transition:all .4s ease;
+}
+
+.rack.visible{
+opacity:1;
+transform:translateY(0);
 }
 
 .rack.active{
-opacity:1;
-transform:scale(1.08);
 outline:3px solid #3b82f6;
+transform:scale(1.05);
 }
 
 .rack.money{
@@ -89,7 +92,7 @@ background:#333;
 </div>
 </div>
 
-<div class="slider" id="slider"></div>
+<div class="racks" id="rackContainer"></div>
 
 </div>
 
@@ -124,15 +127,17 @@ document.getElementById("player").textContent=s.player;
 document.getElementById("score").textContent=s.score;
 document.getElementById("time").textContent=(s.timeLeft/1000).toFixed(1);
 
-let slider=document.getElementById("slider");
-slider.innerHTML="";
+let container=document.getElementById("rackContainer");
+container.innerHTML="";
 
 for(let r=0;r<5;r++){
 
 let div=document.createElement("div");
 div.className="rack";
-if(r===s.rackIndex) div.classList.add("active");
-if(r===s.moneyRack) div.classList.add("money");
+
+if(r <= s.rackIndex) div.classList.add("visible");
+if(r === s.rackIndex) div.classList.add("active");
+if(r === s.moneyRack) div.classList.add("money");
 
 let title=document.createElement("div");
 title.className="title";
@@ -145,17 +150,17 @@ dots.className="dots";
 for(let b=0;b<5;b++){
 let d=document.createElement("div");
 d.className="dot";
+
 if(isMoney(s,r,b)) d.classList.add("money");
 if(s.balls[r][b]==="made") d.classList.add("made");
 if(s.balls[r][b]==="miss") d.classList.add("miss");
+
 dots.appendChild(d);
 }
 
 div.appendChild(dots);
-slider.appendChild(div);
+container.appendChild(div);
 }
-
-slider.style.transform = `translateX(${-s.rackIndex * 296}px)`;
 }
 
 setInterval(()=>{
