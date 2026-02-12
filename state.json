@@ -1,0 +1,17 @@
+{
+  "player": "PLAYER",
+  "score": 0,
+  "timeLeft": 70000,
+  "roundTime": 70000,
+  "running": false,
+  "rackIndex": 0,
+  "ballIndex": 0,
+  "moneyRack": 2,
+  "balls": [
+    [null,null,null,null,null],
+    [null,null,null,null,null],
+    [null,null,null,null,null],
+    [null,null,null,null,null],
+    [null,null,null,null,null]
+  ]
+}
