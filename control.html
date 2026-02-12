@@ -4,35 +4,23 @@
 <meta charset="utf-8">
 <title>3PT Control</title>
 <style>
-body{background:#0b0b0b;color:white;font-family:Arial;padding:30px;}
-input,select{padding:6px;margin:6px 0;}
-button{
-padding:10px 18px;
-margin:6px 6px 6px 0;
-border:none;
-border-radius:8px;
-cursor:pointer;
-font-weight:bold;
-}
+body{background:#111;color:white;font-family:Arial;padding:30px;}
+button{padding:10px 18px;margin:6px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;}
+.make{background:#22c55e;}
+.make2{background:gold;color:black;}
+.miss{background:#ef4444;}
 .start{background:#2563eb;color:white;}
 .pause{background:#aaa;}
 .reset{background:#ddd;}
-.make{background:#22c55e;color:black;}
-.make2{background:gold;color:black;}
-.miss{background:#ef4444;color:white;}
-.timerBox{
-margin-top:20px;
-font-size:28px;
-font-weight:bold;
-}
+input,select{padding:6px;margin:6px 0;}
+.timer{font-size:24px;margin-top:15px;}
 </style>
 </head>
 <body>
 
 <h2>3PT Control</h2>
 
-<label>Player</label><br>
-<input id="player" placeholder="Name"><br>
+<input id="player" placeholder="Player Name"><br>
 
 <label>Round Time (seconds)</label><br>
 <input type="number" id="roundTime" value="70"><br>
@@ -50,7 +38,7 @@ font-weight:bold;
 
 <button class="start" onclick="start()">Start</button>
 <button class="pause" onclick="pause()">Pause</button>
-<button class="reset" onclick="reset()">Reset</button>
+<button class="reset" onclick="resetRound()">Reset</button>
 
 <br><br>
 
@@ -58,74 +46,69 @@ font-weight:bold;
 <button class="make2" onclick="shot('made',2)">MAKE +2</button>
 <button class="miss" onclick="shot('miss')">MISS</button>
 
-<div class="timerBox" id="timerDisplay">70.0</div>
+<div class="timer" id="timerDisplay">70.0</div>
 
 <script>
+const API="https://jsonblob.com/api/jsonBlob/019c542f-f9ad-731c-addd-a35c2ca9abd9";
 
-function getState(){
-return JSON.parse(localStorage.getItem("threePTState")) || {
-player:"PLAYER",
-score:0,
-timeLeft:70000,
-roundTime:70000,
-running:false,
-rackIndex:0,
-ballIndex:0,
-moneyRack:2,
-balls:Array.from({length:5},()=>Array.from({length:5},()=>null))
-};
+async function getState(){
+let r=await fetch(API);
+return await r.json();
 }
 
-function save(s){
-localStorage.setItem("threePTState",JSON.stringify(s));
+async function saveState(s){
+await fetch(API,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(s)
+});
 }
 
-document.getElementById("player").addEventListener("input",function(){
-let s=getState();
+document.getElementById("player").addEventListener("input",async function(){
+let s=await getState();
 s.player=this.value;
-save(s);
+await saveState(s);
 });
 
-document.getElementById("roundTime").addEventListener("change",function(){
-let s=getState();
+document.getElementById("roundTime").addEventListener("change",async function(){
+let s=await getState();
 s.roundTime=parseInt(this.value)*1000;
 s.timeLeft=s.roundTime;
-save(s);
+await saveState(s);
 });
 
-document.getElementById("moneyRack").addEventListener("change",function(){
-let s=getState();
+document.getElementById("moneyRack").addEventListener("change",async function(){
+let s=await getState();
 s.moneyRack=parseInt(this.value);
-save(s);
+await saveState(s);
 });
 
-function start(){
-let s=getState();
+async function start(){
+let s=await getState();
 s.running=true;
-save(s);
+await saveState(s);
 }
 
-function pause(){
-let s=getState();
+async function pause(){
+let s=await getState();
 s.running=false;
-save(s);
+await saveState(s);
 }
 
-function reset(){
-let s=getState();
+async function resetRound(){
+let s=await getState();
 s.score=0;
 s.timeLeft=s.roundTime;
 s.running=false;
 s.rackIndex=0;
 s.ballIndex=0;
 s.balls=Array.from({length:5},()=>Array.from({length:5},()=>null));
-save(s);
+await saveState(s);
 }
 
-function shot(type,force=null){
-let s=getState();
+async function shot(type,force=null){
+let s=await getState();
 let r=s.rackIndex,b=s.ballIndex;
-
 if(r>4)return;
 if(s.balls[r][b]!=null)return;
 
@@ -142,15 +125,15 @@ s.ballIndex=0;
 s.rackIndex++;
 }
 
-save(s);
+await saveState(s);
 }
 
-setInterval(()=>{
-let s=getState();
+setInterval(async ()=>{
+let s=await getState();
 if(s.running && s.timeLeft>0){
 s.timeLeft-=100;
 if(s.timeLeft<0)s.timeLeft=0;
-save(s);
+await saveState(s);
 }
 document.getElementById("timerDisplay").textContent=(s.timeLeft/1000).toFixed(1);
 },100);
