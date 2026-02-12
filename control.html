@@ -49,65 +49,59 @@ input,select{padding:6px;margin:6px 0;}
 <div class="timer" id="timerDisplay">70.0</div>
 
 <script>
-const API="https://jsonblob.com/api/jsonBlob/019c542f-f9ad-731c-addd-a35c2ca9abd9";
-
-async function getState(){
-let r=await fetch(API);
-return await r.json();
+function getState(){
+return JSON.parse(localStorage.getItem("threePTState")) || {
+player:"PLAYER",
+score:0,
+timeLeft:70000,
+roundTime:70000,
+running:false,
+rackIndex:0,
+ballIndex:0,
+moneyRack:2,
+balls:Array.from({length:5},()=>Array.from({length:5},()=>null))
+};
 }
 
-async function saveState(s){
-await fetch(API,{
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(s)
-});
+function saveState(s){
+localStorage.setItem("threePTState",JSON.stringify(s));
 }
 
-document.getElementById("player").addEventListener("input",async function(){
-let s=await getState();
+document.getElementById("player").addEventListener("input",function(){
+let s=getState();
 s.player=this.value;
-await saveState(s);
+saveState(s);
 });
 
-document.getElementById("roundTime").addEventListener("change",async function(){
-let s=await getState();
+document.getElementById("roundTime").addEventListener("change",function(){
+let s=getState();
 s.roundTime=parseInt(this.value)*1000;
 s.timeLeft=s.roundTime;
-await saveState(s);
+saveState(s);
 });
 
-document.getElementById("moneyRack").addEventListener("change",async function(){
-let s=await getState();
+document.getElementById("moneyRack").addEventListener("change",function(){
+let s=getState();
 s.moneyRack=parseInt(this.value);
-await saveState(s);
+saveState(s);
 });
 
-async function start(){
-let s=await getState();
-s.running=true;
-await saveState(s);
-}
+function start(){let s=getState();s.running=true;saveState(s);}
+function pause(){let s=getState();s.running=false;saveState(s);}
 
-async function pause(){
-let s=await getState();
-s.running=false;
-await saveState(s);
-}
-
-async function resetRound(){
-let s=await getState();
+function resetRound(){
+let s=getState();
 s.score=0;
 s.timeLeft=s.roundTime;
 s.running=false;
 s.rackIndex=0;
 s.ballIndex=0;
 s.balls=Array.from({length:5},()=>Array.from({length:5},()=>null));
-await saveState(s);
+saveState(s);
 }
 
-async function shot(type,force=null){
-let s=await getState();
+function shot(type,force=null){
+let s=getState();
 let r=s.rackIndex,b=s.ballIndex;
 if(r>4)return;
 if(s.balls[r][b]!=null)return;
@@ -125,19 +119,13 @@ s.ballIndex=0;
 s.rackIndex++;
 }
 
-await saveState(s);
+saveState(s);
 }
 
-setInterval(async ()=>{
-let s=await getState();
-if(s.running && s.timeLeft>0){
-s.timeLeft-=100;
-if(s.timeLeft<0)s.timeLeft=0;
-await saveState(s);
-}
+setInterval(()=>{
+let s=getState();
 document.getElementById("timerDisplay").textContent=(s.timeLeft/1000).toFixed(1);
 },100);
-
 </script>
 </body>
 </html>
