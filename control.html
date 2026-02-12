@@ -11,6 +11,7 @@ button{padding:12px;margin:5px;font-size:16px;border:none;border-radius:8px;curs
 .gold{background:gold;color:black;}
 .blue{background:#3b82f6;}
 input,select{padding:8px;margin:5px;font-size:16px;}
+.timer{font-size:24px;margin:15px 0;}
 </style>
 </head>
 <body>
@@ -26,7 +27,7 @@ input,select{padding:8px;margin:5px;font-size:16px;}
 <option value="4">Rack 5</option>
 </select>
 
-<br><br>
+<div class="timer" id="timerDisplay">60.0</div>
 
 <button class="blue" onclick="start()">Start</button>
 <button onclick="pause()">Pause</button>
@@ -84,8 +85,10 @@ save(s);
 
 function shot(type,force=null){
 let s=getState();
+if(s.timeLeft<=0) return;
+
 let r=s.rackIndex,b=s.ballIndex;
-if(s.balls[r][b]!=null)return;
+if(s.balls[r][b]!=null) return;
 
 s.balls[r][b]=type;
 
@@ -101,6 +104,11 @@ s.ballIndex=Math.min(4,b);
 
 save(s);
 }
+
+setInterval(()=>{
+let s=getState();
+document.getElementById("timerDisplay").textContent=(s.timeLeft/1000).toFixed(1);
+},250);
 </script>
 </body>
 </html>
