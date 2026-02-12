@@ -10,14 +10,15 @@ button{padding:12px;margin:5px;font-size:16px;border:none;border-radius:8px;curs
 .miss{background:#ef4444;}
 .gold{background:gold;color:black;}
 .blue{background:#3b82f6;}
+input,select{padding:8px;margin:5px;font-size:16px;}
 </style>
 </head>
 <body>
 
 <h2>3PT Control</h2>
 
-<input id="player" placeholder="Player Name">
-<select id="moneyRack">
+<input id="playerInput" placeholder="Player Name">
+<select id="moneyRackSelect">
 <option value="0">Rack 1</option>
 <option value="1">Rack 2</option>
 <option value="2" selected>Rack 3</option>
@@ -29,7 +30,7 @@ button{padding:12px;margin:5px;font-size:16px;border:none;border-radius:8px;curs
 
 <button class="blue" onclick="start()">Start</button>
 <button onclick="pause()">Pause</button>
-<button onclick="reset()">Reset</button>
+<button onclick="resetRound()">Reset</button>
 
 <br><br>
 
@@ -40,7 +41,7 @@ button{padding:12px;margin:5px;font-size:16px;border:none;border-radius:8px;curs
 <script>
 function getState(){
 return JSON.parse(localStorage.getItem("threePTState")) || {
-player:"MAGIC",
+player:"PLAYER",
 score:0,
 timeLeft:60000,
 running:false,
@@ -55,10 +56,22 @@ function save(s){
 localStorage.setItem("threePTState",JSON.stringify(s));
 }
 
+document.getElementById("playerInput").addEventListener("input",function(){
+let s=getState();
+s.player=this.value || "PLAYER";
+save(s);
+});
+
+document.getElementById("moneyRackSelect").addEventListener("change",function(){
+let s=getState();
+s.moneyRack=parseInt(this.value);
+save(s);
+});
+
 function start(){let s=getState();s.running=true;save(s);}
 function pause(){let s=getState();s.running=false;save(s);}
 
-function reset(){
+function resetRound(){
 let s=getState();
 s.score=0;
 s.timeLeft=60000;
