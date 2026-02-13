@@ -117,9 +117,9 @@ container.appendChild(div);
 }
 
 let wrap=document.getElementById("wrap");
-let baseWidth=350;
-let rackWidth=240;
-wrap.style.width=baseWidth+((s.rackIndex+1)*rackWidth)+"px";
+let baseWidth = 320;      // scoreboard area
+let rackWidth = 210;      // tighter rack width
+wrap.style.width = baseWidth + ((s.rackIndex + 1) * rackWidth) + "px";
 }
 
 setInterval(()=>{
@@ -135,3 +135,4 @@ render();
 </script>
 </body>
 </html>
+
