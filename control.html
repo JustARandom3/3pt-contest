@@ -2,39 +2,32 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>3PT Control</title>
+<title>3PT Control (3-ball racks + 2 logo)</title>
 <style>
-body{background:#111;color:white;font-family:Arial;padding:30px;}
-button{padding:10px 18px;margin:6px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;}
-.make{background:#22c55e;}
-.make2{background:gold;color:black;}
-.miss{background:#ef4444;}
-.start{background:#2563eb;color:white;}
-.pause{background:#aaa;}
-.reset{background:#ddd;}
-input,select{padding:6px;margin:6px 0;}
-.timer{font-size:24px;margin-top:15px;}
+  body{background:#111;color:white;font-family:Arial;padding:30px;}
+  button{padding:10px 18px;margin:6px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;}
+  .make{background:#22c55e;}
+  .miss{background:#ef4444;color:white;}
+  .start{background:#2563eb;color:white;}
+  .pause{background:#aaa;color:black;}
+  .reset{background:#ddd;color:black;}
+  input{padding:6px;margin:6px 0;font-size:16px;}
+  label{opacity:.8;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}
+  .timer{font-size:24px;margin-top:15px;}
+  .meta{opacity:.7;margin-top:10px;}
 </style>
 </head>
 <body>
 
 <h2>3PT Control</h2>
 
+<label>Player Name</label><br>
 <input id="player" placeholder="Player Name"><br>
 
 <label>Round Time (seconds)</label><br>
-<input type="number" id="roundTime" value="70"><br>
+<input type="number" id="roundTime" value="70" min="1"><br>
 
-<label>Money Rack</label><br>
-<select id="moneyRack">
-<option value="0">Rack 1</option>
-<option value="1">Rack 2</option>
-<option value="2" selected>Rack 3</option>
-<option value="3">Rack 4</option>
-<option value="4">Rack 5</option>
-</select>
-
-<br><br>
+<br>
 
 <button class="start" onclick="start()">Start</button>
 <button class="pause" onclick="pause()">Pause</button>
@@ -43,89 +36,128 @@ input,select{padding:6px;margin:6px 0;}
 <br><br>
 
 <button class="make" onclick="shot('made')">MAKE</button>
-<button class="make2" onclick="shot('made',2)">MAKE +2</button>
 <button class="miss" onclick="shot('miss')">MISS</button>
 
 <div class="timer" id="timerDisplay">70.0</div>
+<div class="meta" id="stepInfo">Section: 1/7 • Ball: 1</div>
 
 <script>
-function getState(){
-return JSON.parse(localStorage.getItem("threePTState")) || {
-player:"PLAYER",
-score:0,
-timeLeft:70000,
-roundTime:70000,
-running:false,
-rackIndex:0,
-ballIndex:0,
-moneyRack:2,
-balls:Array.from({length:5},()=>Array.from({length:5},()=>null))
-};
-}
+  const SECTIONS = [
+    { type:"rack", label:"CORNER", balls:3 },
+    { type:"rack", label:"WING",   balls:3 },
+    { type:"logo", label:"LOGO",   balls:1 },
+    { type:"rack", label:"TOP KEY",balls:3 },
+    { type:"logo", label:"LOGO",   balls:1 },
+    { type:"rack", label:"WING",   balls:3 },
+    { type:"rack", label:"CORNER", balls:3 },
+  ];
 
-function saveState(s){
-localStorage.setItem("threePTState",JSON.stringify(s));
-}
+  function defaultState(){
+    return {
+      player:"PLAYER",
+      score:0,
+      timeLeft:70000,
+      roundTime:70000,
+      running:false,
+      sectionIndex:0,
+      ballIndex:0,
+      shots: SECTIONS.map(s => Array.from({length:s.balls}, ()=> null))
+    };
+  }
 
-document.getElementById("player").addEventListener("input",function(){
-let s=getState();
-s.player=this.value;
-saveState(s);
-});
+  function getState(){
+    return JSON.parse(localStorage.getItem("threePTStateV2")) || defaultState();
+  }
 
-document.getElementById("roundTime").addEventListener("change",function(){
-let s=getState();
-s.roundTime=parseInt(this.value)*1000;
-s.timeLeft=s.roundTime;
-saveState(s);
-});
+  function setState(s){
+    localStorage.setItem("threePTStateV2", JSON.stringify(s));
+  }
 
-document.getElementById("moneyRack").addEventListener("change",function(){
-let s=getState();
-s.moneyRack=parseInt(this.value);
-saveState(s);
-});
+  // scoring
+  function pointsFor(sectionIndex, ballIndex){
+    const meta = SECTIONS[sectionIndex];
+    if(meta.type === "logo") return 3;
+    // rack: ball 3 (index 2) = 2 points, others = 1
+    return (ballIndex === 2) ? 2 : 1;
+  }
 
-function start(){let s=getState();s.running=true;saveState(s);}
-function pause(){let s=getState();s.running=false;saveState(s);}
+  document.getElementById("player").addEventListener("input", ()=>{
+    const s = getState();
+    s.player = document.getElementById("player").value || "PLAYER";
+    setState(s);
+  });
 
-function resetRound(){
-let s=getState();
-s.score=0;
-s.timeLeft=s.roundTime;
-s.running=false;
-s.rackIndex=0;
-s.ballIndex=0;
-s.balls=Array.from({length:5},()=>Array.from({length:5},()=>null));
-saveState(s);
-}
+  document.getElementById("roundTime").addEventListener("change", ()=>{
+    const s = getState();
+    const secs = Math.max(1, parseInt(document.getElementById("roundTime").value || "70", 10));
+    s.roundTime = secs * 1000;
+    s.timeLeft  = s.roundTime;
+    setState(s);
+  });
 
-function shot(type,force=null){
-let s=getState();
-let r=s.rackIndex,b=s.ballIndex;
-if(r>4)return;
-if(s.balls[r][b]!=null)return;
+  function start(){
+    const s=getState();
+    s.running=true;
+    setState(s);
+  }
+  function pause(){
+    const s=getState();
+    s.running=false;
+    setState(s);
+  }
 
-s.balls[r][b]=type;
+  function resetRound(){
+    const s = defaultState();
+    const secs = Math.max(1, parseInt(document.getElementById("roundTime").value || "70", 10));
+    s.roundTime = secs * 1000;
+    s.timeLeft  = s.roundTime;
+    s.player = document.getElementById("player").value || "PLAYER";
+    setState(s);
+  }
 
-if(type==="made"){
-let pts=force!=null?force:(r===s.moneyRack||b===4?2:1);
-s.score+=pts;
-}
+  function advance(s){
+    const meta = SECTIONS[s.sectionIndex];
+    s.ballIndex++;
 
-s.ballIndex++;
-if(s.ballIndex>4){
-s.ballIndex=0;
-s.rackIndex++;
-}
+    if(s.ballIndex >= meta.balls){
+      s.ballIndex = 0;
+      s.sectionIndex++;
+      if(s.sectionIndex >= SECTIONS.length){
+        // end
+        s.sectionIndex = SECTIONS.length - 1;
+        s.ballIndex = SECTIONS[SECTIONS.length - 1].balls - 1;
+        s.running = false;
+      }
+    }
+  }
 
-saveState(s);
-}
+  function shot(result){
+    const s = getState();
+    if(s.timeLeft <= 0) return;
 
-setInterval(()=>{
-let s=getState();
-document.getElementById("timerDisplay").textContent=(s.timeLeft/1000).toFixed(1);
-},100);
+    const sec = s.sectionIndex;
+    const ball = s.ballIndex;
+
+    // prevent overwriting
+    if(s.shots?.[sec]?.[ball] != null) return;
+
+    s.shots[sec][ball] = result;
+
+    if(result === "made"){
+      s.score += pointsFor(sec, ball);
+    }
+
+    advance(s);
+    setState(s);
+  }
+
+  // UI updates
+  setInterval(()=>{
+    const s=getState();
+    document.getElementById("timerDisplay").textContent = (s.timeLeft/1000).toFixed(1);
+    document.getElementById("stepInfo").textContent =
+      `Section: ${s.sectionIndex+1}/7 • Ball: ${s.ballIndex+1}`;
+  }, 100);
 </script>
 </body>
 </html>
